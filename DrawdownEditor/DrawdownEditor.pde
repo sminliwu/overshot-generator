@@ -34,7 +34,7 @@ String error;
 int xo;
 int yo;
 
-// initializing bools for walkgthrough steps
+// initializing bools for walkthrough steps
 boolean inputOnThreading = false;
 boolean switchedDirection = false;
 boolean switchedToTreadling = false;
