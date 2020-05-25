@@ -8,16 +8,19 @@ This is a P5/Processing sketch that allows someone to quickly make and edit a dr
 There is an interactive tutorial embedded in the generator that guides a user through the basic key commands. In the order that you'd see them, those instructions are:
 1. Press '1', '3', or '5' to add a threading block of that width. Press 'r' to reverse pattern direction.
 2. Press 't' to switch to editing treadles (or to switch back to threading).
-   3. Press a key '1' to '6' to add a treadling block.
-   4. Blocks 1-4 are woven as overshot, so tabby rows are automatically inserted before each pattern pick.
-5. Press backspace to delete the most recent treadling or threading block.
+   
+   1. Press a key '1' to '6' to add a treadling block.
+   
+   2. Blocks 1-4 are woven as overshot, so tabby rows are automatically inserted before each pattern pick.
+
+3. Press backspace to delete the most recent treadling or threading block.
 
 ### Other Controls
-* `+`/`-` - adds/removes one warp (if editing threading) OR one pick/row (if editing treadling) to the draft.
-* `Shift`+`+`/`Shift`-`-` - zooms in/zooms out.
-* `p` - toggles the highlighted box (threading or treadling) between profile and normal modes.
-* `Shift`+`p` (`P`) - toggles both threading and treadling between profile and normal modes.
-* `o` - switches the profile mode of treadling.
+* `+`/`-` : adds/removes one warp (if editing threading) OR one pick/row (if editing treadling) to the draft.
+* `Shift` `+`/`Shift` `-` : zooms in/zooms out.
+* `p` : toggles the highlighted box (threading or treadling) between profile and normal modes.
+* `Shift` `p` : toggles both threading and treadling between profile and normal modes.
+* `o` : switches the profile mode of treadling.
 * You can also click within the threading, tie-up, or treadling to manually edit those boxes. (use at your own risk)
 
 ## Files
