@@ -2,7 +2,7 @@
 
 This repo also generates a webpage at <http://sminliwu.github.io/overshot-generator>.
 
-This is a P5/Processing sketch that allows someone to quickly make and edit a draft to produce a flowing, curving design using an overshot structure. For a weaving-centered explanation on why this produces a flowing overshot design, read this article by Bonnie Inouye.
+This is a P5/Processing sketch that allows someone to quickly make and edit a draft to produce a flowing, curving design using an overshot structure. For a weaving-centered explanation on why this produces a flowing overshot design, read [this article by Bonnie Inouye](http://www.weavezine.com/content/flowing-curves-part-1-overshot-and-weaving-overshot.html).
 
 ## How to Use
 There is an interactive tutorial embedded in the generator that guides a user through the basic key commands. In the order that you'd see them, those instructions are:
