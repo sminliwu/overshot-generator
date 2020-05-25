@@ -1,6 +1,6 @@
 # Flowing Curves Overshot Generator
 
-This repo also generates a webpage at <http://sminliwu.github.io/overshot-generator>.
+This repo also generates a webpage at <http://sminliwu.github.io/overshot-generator>, where you can use the generator in your browser without any other installation or set-up.
 
 This is a P5/Processing sketch that allows someone to quickly make and edit a draft to produce a flowing, curving design using an overshot structure. For a weaving-centered explanation on why this produces a flowing overshot design, read [this article by Bonnie Inouye](http://www.weavezine.com/content/flowing-curves-part-1-overshot-and-weaving-overshot.html).
 
