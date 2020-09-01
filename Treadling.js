@@ -61,13 +61,13 @@ class Treadling extends DraftContainer {
     // update treadling array
     // add tabby pick no matter what, forcing tabby pattern
     if (this.tabbyRow) {
-        this.treadling[this.pickCount][this.TABBY_A] = true;
+        this.treadling.setData(this.pickCount, this.TABBY_A, true);
       } else {
-        this.treadling[this.pickCount][this.TABBY_B] = true;
+        this.treadling.setData(this.pickCount, this.TABBY_B, true);
       }
     // treadles 0-3: overshot pattern
     if (treadle >= 0 && treadle <= 3) {      
-      this.treadling[this.pickCount+1][treadle] = true; // add pattern pick
+      this.treadling.setData(this.pickCount+1, treadle, true); // add pattern pick
       this.pickCount += 2; // overshot picks always come with: 1 tabby, 1 pattern
     }
     // treadles 4-5: tabby
@@ -98,14 +98,14 @@ class Treadling extends DraftContainer {
     if (treadle >= 0 && treadle <= 3) {
       this.pickCount -= 2;
       for (var t = 0; t < this.treadles; t++) {
-        this.treadling[this.pickCount][t] = false;
-        this.treadling[this.pickCount+1][t] = false;
+        this.treadling.setData(this.pickCount, t, false);
+        this.treadling.setData(this.pickCount+1, t, false);
       }
     } else {
       // remove tabby pick
       this.pickCount--;
       for (var t = 0; t < this.treadles; t++) {
-        this.treadling[this.pickCount][t] = false;
+        this.treadling.setData(this.pickCount, t, false);
       }
     }
     if (this.profileView) {
@@ -134,7 +134,7 @@ class Treadling extends DraftContainer {
     // reset profile
     for (var i = 0; i < this.picks; i++) {
       for (var j = 0; j < this.treadles; j++) {
-        this.profile[i][j] = false;
+        this.profile.setData(i, j, false);
       }
     }
     // for each threading block,
@@ -144,7 +144,7 @@ class Treadling extends DraftContainer {
       // find which treadle the current block is on
       var whichTreadle = -1;
       for (var t = 0; t < this.treadles; t++) {
-        if (this.treadling[currentPick+1][t]) {
+        if (this.treadling.getData(currentPick+1,t)) {
           whichTreadle = t;
           break;
         }
@@ -153,11 +153,11 @@ class Treadling extends DraftContainer {
       //console.log(i+", "+ this.treadlingInputs[i]+", "+whichTreadle);
       // for treadles 0-3, block size = 2; for treadles 4-5, block size = 1;
       if (whichTreadle >= 0 && whichTreadle <= 3) {
-        this.profile[currentRowInProfile][whichTreadle] = true;
+        this.profile.setData(currentRowInProfile, whichTreadle, true);
         if (this.profileMode) { // show overshot pattern picks as 1 row
           currentRowInProfile++;
         } else { // show overshot pattern picks as 2 rows
-          this.profile[currentRowInProfile+1][whichTreadle] = true;
+          this.profile.setData(currentRowInProfile+1, whichTreadle, true);
           currentRowInProfile += 2;
         }
         currentPick += 2;
@@ -175,11 +175,7 @@ class Treadling extends DraftContainer {
     var str = new String();
     for (var p = 0; p < this.pickCount; p++) {
       for (var t = 0; t < this.treadles; t++) {
-        if (this.treadling[p][t]) {
-          str += '1';
-        } else {
-          str += '0';
-        }
+        str += this.treadling.getData(s, w) ? '1' : '0';
       }
       str += '\n';
     }
