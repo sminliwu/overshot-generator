@@ -1,13 +1,20 @@
 // porting DrawdownEditor from Processing (Java) to P5.js
 // really more of an overshot curve generator/visualizer
-
+/* more on the interface and code organization:
+	- this file has setup(), draw(), key and mouse events, updateDrawdown() -- handling user inputs and updating the display to respond
+	- should this file also handle DOM events? try it, see if it's too messy; would be good to have it in the same file because DOM events may resize P5 canvas/shift canvas elements
+		- showHideTutorial() - click button on sidebar, affects P5
+		- showHideSidebar() - sidebar, re-render DOM but also expand canvas
+		- download() - ????
+		- 
+*/
 var dim_cell = 8;
 
 // loom set-up
 const DEFAULT_SHAFTS = 4;
 const DEFAULT_TREADLES = 6;
-const DEFAULT_WARPS = 120;
-const DEFAULT_PICKS = 80;
+const DEFAULT_WARPS = 80;
+const DEFAULT_PICKS = 50;
 
 // pattern data
 let stitches;
@@ -15,23 +22,143 @@ let TX, TL;
 let tieUp, drawdown;
 
 // tracking user input
-var editThreading = true; // if true, editing tie-up in tieUpInputs
-  //if false, editing treadles instead
+var editThreading = true; 	// if true, editing tie-up in tieUpInputs
+  							//if false, editing treadles instead
 var ctrlPressed = false;
 let error;
 
 // graphics set-up
+const DIMCELL_DEFAULT = 8;
 let xo, yo;
+let tutHeight;
 
 // initializing bools for walkthrough steps
 var inputOnThreading = false;
 var switchedDirection = false;
 var switchedToTreadling = false;
 var inputOnTreadling = false;
+var tutorialList = [inputOnThreading, switchedDirection, switchedToTreadling, inputOnTreadling];
+
+// command list HTML
+var commandHTML = 
+	'<p>'+key('t')+' - switch between editing treadles/threading.</p>' +
+	'<p>'+key('backspace')+' - remove the most recent key input.</p>' +
+	'<p>'+key('+')+'/'+key('-')+' - add/remove one warp (if editing threading) <i>OR</i> one pick/row (if editing treadling) to the draft.</p>'+
+	'<p>'+key('Shift')+'+'+key('+')+'/'+key('Shift')+'+'+key('-')+' - zoom in/out.</p>'+
+	'<h3>Threading Inputs</h3>'+
+	'<p>'+key('1')+', '+key('3')+', '+key('5')+' - add a threading block of that width.</p>' +
+	'<p>'+key('r')+' - reverse pattern progression</p>' +
+	'<h3>Treadling Inputs</h3>'+
+	'<p>'+key('1')+'-'+key('6')+' - add a treadling block on the corresponding treadle. '+key('1')+'-'+key('4')+' are woven as overshot, with tabby picks automatically inserted.</p>'+
+	'<h3>Profile Mode</h3>'+
+	'<p>'+key('p')+' - switch the current box between profile/normal view.</p>'+
+	'<p>'+key('Shift')+'+'+key('p') + ' ('+key('P')+') - switch both threading and treadling between profile/normal views.</p>'+
+	'<p>'+key('o')+' - switch profile mode of treadling between compact/expanded.</p>'
+;
+
+// element vars
+var canvas, sidebar, hiddenSidebar;
+var controlDiv, advancedDiv;
+var ctrlVisButton, tutVisButton, sidebarVisButton;
+
+// visibility status
+var controlsVis = false;
+var tutorialVis = true;
+var sidebarVis = true;
+var advancedVis = false;
+
+/* page element display functions */
+
+function toggleControls() {
+	if (controlsVis) {
+		ctrlVisButton.innerHTML = 'Show';
+		controlDiv.innerHTML = '';
+		sidebar.classList.remove('expanded-height');
+		sidebar.classList.add('single-height');
+		controlsVis = false;
+	} else {
+		ctrlVisButton.innerHTML = 'Hide';
+		controlDiv.innerHTML = commandHTML;
+		sidebar.classList.remove('single-height');
+		sidebar.classList.add('expanded-height');
+		controlsVis = true;
+	}
+}
+
+function toggleTutorial() {
+	if (tutorialVis) {
+		tutVisButton.innerHTML = 'Show Tutorial';
+		yo = 3*dim_cell;
+		for (i = 0; i < tutorialList.length; i++) {
+			tutorialList[i] = false;
+		}
+		tutorialVis = false;
+	} else {
+		tutVisButton.innerHTML = 'Hide Tutorial';
+		yo = 14*dim_cell;
+		for (i = 0; i < tutorialList.length; i++) {
+			tutorialList[i] = true;
+		}
+		tutorialVis = true;
+	}
+}
+
+function toggleSidebar() {
+	if (sidebarVis) {
+		sidebar.setAttribute("hidden", true);
+		hiddenSidebar.removeAttribute("hidden");
+  		document.getElementById('sketch').style.left = "5%";
+		sidebarVis = false;
+	} else {
+		sidebar.removeAttribute("hidden");
+		hiddenSidebar.setAttribute("hidden", true);
+  		document.getElementById('sketch').style.left = "25%";
+		sidebarVis = true;
+	}
+}
+
+function toggleAdvanced() {
+	if (advancedVis) {
+		document.getElementById("advanced-vis").innerHTML = "Show";
+		advancedDiv.setAttribute("hidden", true);
+		advancedVis = false;
+	} else {
+		document.getElementById("advanced-vis").innerHTML = "Hide";
+		advancedDiv.removeAttribute("hidden");
+		advancedVis = true;
+	}
+}
+
+function saveDesign() {
+	var disabledTut = false;
+	if (tutorialVis) {
+		toggleTutorial();
+		disabledTut = true;
+	}
+	saveCanvas();
+	// if (disabledTut) {
+	// 	toggleTutorial();
+	// }
+}
+
+/* P5 FUNCTIONS START HERE */
 
 function setup() {
 	console.log("setup");
-	createCanvas(windowWidth, windowHeight);
+	canvas = createCanvas(0.7*windowWidth, 0.99*windowHeight);
+	canvas.parent('sketch');
+
+	sidebar = document.getElementById('sidebar');
+	hiddenSidebar = document.getElementById('sidebar-hidden');
+
+	controlDiv = document.getElementById('controls-list');
+	controlDiv.innerHTML = '';
+
+	advancedDiv = document.getElementById('adv-functions');
+
+	ctrlVisButton = document.getElementById('ctrl-vis-button');
+	tutVisButton = document.getElementById('tut-vis-button');
+	sidebarVisButton = document.getElementById('sidebar-vis-button');
 
 	xo = dim_cell;
 	yo = 14*dim_cell;
@@ -55,41 +182,43 @@ function draw() {
 	noStroke();
 	textSize(12);
 	// instruction text
-	if (inputOnThreading) {
-		text("Press '1', '3', or '5' to add a threading block of that width. Press 'r' to reverse pattern direction.", xo, yo/4);
-	} else { 
-		text("Press '1', '3', or '5' to add a threading block of that width.", xo, yo/4); 
-	}
-	if (switchedDirection) {	
-		text("Press 't' to switch to editing treadles (or to switch back to threading).", xo, yo/4+15);
-	}
-	if (switchedToTreadling) {
-		text("    Press a key '1' to '6' to add a treadling block.", xo, yo/4+30);
-		text("    Blocks 1-4 are woven as overshot, so tabby rows are automatically inserted before each pattern pick.", xo, yo/4+45);
-	}
-	if (inputOnTreadling) {
-		text("Press backspace to delete the most recent treadling or threading block.", xo, yo/4+60);
+	if (tutorialVis) {
+		if (inputOnThreading) {
+			text("Press '1', '3', or '5' to add a threading block of that width. Press 'r' to reverse pattern direction.", DIMCELL_DEFAULT, yo/4);
+		} else { 
+			text("Press '1', '3', or '5' to add a threading block of that width.", DIMCELL_DEFAULT, yo/4); 
+		}
+		if (switchedDirection) {	
+			text("Press 't' to switch to editing treadles (or to switch back to threading).", DIMCELL_DEFAULT, yo/4+15);
+		}
+		if (switchedToTreadling) {
+			text("    Press a key '1' to '6' to add a treadling block.", DIMCELL_DEFAULT, yo/4+30);
+			text("    Blocks 1-4 are woven as overshot, so tabby rows are automatically inserted before each pattern pick.", DIMCELL_DEFAULT, yo/4+45);
+		}
+		if (inputOnTreadling) {
+			text("Press backspace to delete the most recent treadling or threading block.", DIMCELL_DEFAULT, yo/4+60);
+		}
 	}
 
 	// status text
-	text("threading: "+TX.threadingCount+" / "+ TX.warps+ " ends", xo, 13.5/14*yo);
+	text("threading: "+TX.threadingCount+" / "+ TX.warps+ " ends", DIMCELL_DEFAULT, yo-4);
 	var dir = new String();
 	if (TX.direction) {
 		dir = "1-2-3-4";
 	} else { dir = "4-3-2-1"; }
-	text("direction: "+dir, xo+200, 13.5/14*yo);
+	text("direction: "+dir, DIMCELL_DEFAULT+200, yo-4);
 
 	// console.log(code+" "+pw);
 	fill(255, 0, 0);
 	noStroke();
 	textSize(12);
-	text(error, xo, yo*11.5/14); 
+	text(error, xo, yo-20); 
 
 	stroke(0);
 	// DRAW THREADING
 	for (var i = 0; i < TX.shafts; i++) { // Y coord (row)
 		for (var j = 0; j < TX.warps; j++) { // X coord (col)
-			if (TX.displayData[i][j]) { fill(0); }
+			if (TX.displayData.getData(i,j)) { fill(0); }
 			else if (editThreading && TX.profileView) {
 				fill(0, 255, 0);
 			} else if (editThreading) {
@@ -117,7 +246,7 @@ function draw() {
 	// DRAW TREADLING
 	for (var i = 0; i < TL.picks; i++) { //<>//
 		for (var j = 0; j < TL.treadles; j++) {
-		if (TL.displayData[i][j]) fill(0);
+		if (TL.displayData.getData(i,j)) fill(0);
 		else if (!editThreading && TL.profileView) {
 	    	fill(0, 255, 0);
 	  	} else if (!editThreading) {
@@ -132,7 +261,7 @@ function draw() {
 	// DRAWDOWN
 	for (var i = 0; i < TL.picks; i++) {
 		for (var j = 0; j < TX.warps; j++) {
-	  		if (drawdown.displayData[i][j]) { fill(0); }
+	  		if (drawdown.displayData.getData(i,j)) { fill(0); }
 	 		else { fill(255); }
 	  		var dispX = TX.warps-1-j;
 	  		rect(dispX*dim_cell+xo, (i+TX.shafts+1)*dim_cell+yo, dim_cell, dim_cell);
@@ -140,12 +269,12 @@ function draw() {
 	}
 
 	// keyboard events (commands valid for a key held down)
-	if (keyIsDown(LEFT_ARROW) && !keyIsDown(RIGHT_ARROW)) {
-		xo--;
-	}
-	if (keyIsDown(RIGHT_ARROW) && !keyIsDown(LEFT_ARROW)) {
-		xo++;
-	}
+	// if (keyIsDown(LEFT_ARROW) && !keyIsDown(RIGHT_ARROW)) {
+	// 	xo--;
+	// }
+	// if (keyIsDown(RIGHT_ARROW) && !keyIsDown(LEFT_ARROW)) {
+	// 	xo++;
+	// }
 
 }
 
@@ -159,13 +288,13 @@ function mouseClicked() {
 		var gridY = floor(TX.shafts-(mouseY - yo)/dim_cell);
 		//console.log("mapping to", gridX, gridY);
 		// only one black square per column allowed
-		if (!TX.threading[gridY][gridX]) {
+		if (!TX.threading.getData(gridY,gridX)) {
       		for (var i = 0; i < TX.shafts; i++) {
         		// clear any black squares in the column before flipping square
-	        	TX.threading[i][gridX] = false;
+	        	TX.threading.setData(i, gridX, false);
     		}
     	}
-    	TX.threading[gridY][gridX] = !TX.threading[gridY][gridX];
+    	TX.threading.toggleCell(gridY, gridX);
 	}
   	// in tie-up rectangle
   	if (mouseX > (dim_cell*TX.warps + xo) && mouseX < (dim_cell*(TX.warps+1+TL.treadles) + xo) &&
@@ -180,13 +309,13 @@ function mouseClicked() {
     	var gridX = floor((mouseX - xo - (TX.warps + 1)*dim_cell)/dim_cell);
     	var gridY = floor((mouseY - yo - (TX.shafts + 1)*dim_cell)/dim_cell);
     	// only one treadle allowed per row (why would I do multiple treadles no)
-    	if (!TL.treadling[gridY][gridX]) {
+    	if (!TL.treadling.getData(gridY,gridX)) {
       		for (var i = 0; i < TL.treadles; i++) {
         	// clear any black squares in the row before flipping square
-        		TL.treadling[gridY][i] = false;
+        		TL.treadling.setData(gridY, i, false);
       		}
     	}
-    	TL.treadling[gridY][gridX] = !TL.treadling[gridY][gridX];
+    	TL.treadling.toggleCell(gridY, gridX);
   	}
   	updateDrawdown();
 }
@@ -196,13 +325,13 @@ function updateDrawdown() {
   // i-th treadling row -> which treadle was pressed?
   // on that treadle, what does that column of tie-up look like?
   // if cell in that column, then OR to make the row
-  
+
   // for each row
   for (var row = 0; row < TL.picks; row++) {
     var updatedRow = [];
     var whichTreadle = -1;
     for (var t = 0; t < TL.treadles; t++) {
-      if (TL.displayData[row][t]) {
+      if (TL.displayData.getData(row,t)) {
         whichTreadle = t;
         break;
       }
@@ -216,16 +345,17 @@ function updateDrawdown() {
           updatedRow[col] = false;
         } else {
           for (var s = 0; s < TX.shafts; s++) {
-            updatedRow[col] |= tieUp[s][whichTreadle] && TX.displayData[s][col];
+            updatedRow[col] |= tieUp[s][whichTreadle] && TX.displayData.getData(s,col);
         }
       }
     }
     //console.log(updatedRow);
     // copy updated row into drawdown
     for (var col = 0; col < TX.warps; col++) {
-      drawdown.displayData[row][col] = updatedRow[col];
+      drawdown.displayData.setData(row, col, updatedRow[col]);
     }
   }
+  //console.log(drawdown.printData());
 }
 
 // handles single press (down and release) event
@@ -339,4 +469,9 @@ function keyPressed() {
   	}
   	updateDrawdown();
   	return false;
+}
+
+// HTML formatting helpers
+function key(str) {
+	return "<span class='key'>" + str + "</span>"
 }

@@ -1,4 +1,4 @@
-<!-- webpage hosting P5.js sketch and websocket connection -->
+<!-- webpage hosting P5.js sketch -->
 
 <!DOCTYPE html>
 <html lang="">
@@ -6,14 +6,52 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overshot Curve Generator</title>
-    <style> body {padding: 0; margin: 0;} </style>
-    
+    <link rel="stylesheet" type="text/css" href="style.css"> 
 </head>
   <body>
-   <div id='sketch'></div>
- 
-    <!-- Websockets, etc. scripts -->
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <div id='sidebar-hidden' class="column narrow single-height" hidden>
+      <button id='sidebar-show-button' class='showhide-button' onclick="toggleSidebar()">></button>
+    </div>
+    <div id='sidebar' class="column left single-height">
+      <h1>Overshot Curve Generator</h1>
+      <p id='author'><i>by Shanel Wu</i></p>
+      <div id='show-hide-global'>
+        <button id='sidebar-vis-button' class='showhide-button' onclick="toggleSidebar()">Hide Sidebar</button>
+        <button id='tut-vis-button' class='showhide-button' onclick="toggleTutorial()">Hide Tutorial</button>
+      </div>
+      <div id='keymouse-controls'>
+        <div class='menu-head'>
+          <h2>Controls</h2>
+          <button id='ctrl-vis-button' class='showhide-button' onclick="toggleControls()">Show</button>
+        </div>
+        <div id='controls-list'>
+          <!-- 't' key switch -->
+          <!-- 'backspace' to delete most recent input -->
+          <!-- '+/-' to add/del drawndown size -->
+          <!-- Shift +/- to zoom in/out -->
+          <!-- threading only: 1,3,5, r -->
+          <!-- treadling only: 1-6 -->
+          <!-- profile mode: p, P, o -->
+          <!-- manual click -->
+        </div>
+      </div>
+      <div id='save-controls'>
+        <h2>Save</h2>
+        <button onclick="saveDesign()">Download</button>
+        <button>Print</button>
+      </div>
+      <div id='advanced'>
+        <div class='menu-head'>
+          <h2>Advanced</h2>
+          <button id='advanced-vis' class='showhide-button' onclick="toggleAdvanced()">Show</button> 
+        </div>
+        <div id='adv-functions' hidden>
+          <button>Define Custom Progression</button>
+          <button>Loom Type</button>
+        </div>
+      </div>
+    </div>
+    <div id='sketch' class="column"></div>
 
     <!-- P5 scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.5.14/p5.min.js"></script>
@@ -22,5 +60,7 @@
     <script src="Treadling.js"></script>
     <script src="overshotCurveGen.js"></script>
 
+    <!-- other scripts -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
   </body>
 </html>

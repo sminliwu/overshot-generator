@@ -24,7 +24,6 @@ There is an interactive tutorial embedded in the generator that guides a user th
 * You can also click within the threading, tie-up, or treadling to manually edit those boxes. (use at your own risk)
 
 ## Files
-* ORIG_overshotGenerator - Directory for the original overshot generator created by my advisor, which worked with a different type of overshot draft.
 * OvershotCurveGen -  Directory for Processing (Java) code for the flowing curves overshot generator.
 * index.html - HTML page that runs the P5.js generator.
 * overshotCurveGen.js - P5.js code for the flowing curves overshot generator.
@@ -35,5 +34,5 @@ There is an interactive tutorial embedded in the generator that guides a user th
 * Sidebar that fully explains the controls like this readme does.
 * Exporting the draft as an image.
 * Exporting an abbreviated threading draft using my own notation of block lengths with the shaft numbers.
-* Optimizing the P5 version using Javascript's ArrayBuffer or TypedArray structures, not the Array types that cause some inefficiencies and slowness in the current version.
-* If you have suggestions for other features/modifications, contact me OR fork the repo to modify the tool!
+* Further optimizing the P5 version with whatever Javascript offers (suggestions welcome, not a JS expert).
+* If you have suggestions for other features/modifications, contact me AND/OR fork the repo to modify the tool!
