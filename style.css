@@ -59,9 +59,10 @@ p {
 	display: inline-block;
 	position: fixed;
 	height: 100%;
-	left: 25%;
+	left: 20%;
 	z-index: -1;
-	width: 100%;
+	width: 80%;
+	overflow: auto;
 }
 
 #sidebar, #sidebar-hidden {
@@ -91,6 +92,11 @@ input, .ui-button, button {
 	border-radius: 5px;
 	background: #f6f6f6;
 	cursor: pointer;
+}
+
+button:disabled {
+	background: #CECECE;
+	cursor: not-allowed;
 }
 
 .key {

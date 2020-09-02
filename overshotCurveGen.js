@@ -57,7 +57,7 @@ var commandHTML =
 ;
 
 // element vars
-var canvas, sidebar, hiddenSidebar;
+var canvas, sidebar, hiddenSidebar, sketchDiv;
 var controlDiv, advancedDiv;
 var ctrlVisButton, tutVisButton, sidebarVisButton;
 
@@ -101,18 +101,19 @@ function toggleTutorial() {
 		}
 		tutorialVis = true;
 	}
+	redraw();
 }
 
 function toggleSidebar() {
 	if (sidebarVis) {
 		sidebar.setAttribute("hidden", true);
 		hiddenSidebar.removeAttribute("hidden");
-  		document.getElementById('sketch').style.left = "5%";
+  		sketchDiv.style.left = "5%";
 		sidebarVis = false;
 	} else {
 		sidebar.removeAttribute("hidden");
 		hiddenSidebar.setAttribute("hidden", true);
-  		document.getElementById('sketch').style.left = "25%";
+  		sketchDiv.style.left = "20%";
 		sidebarVis = true;
 	}
 }
@@ -130,26 +131,25 @@ function toggleAdvanced() {
 }
 
 function saveDesign() {
-	var disabledTut = false;
 	if (tutorialVis) {
 		toggleTutorial();
-		disabledTut = true;
+		saveCanvas();
+		toggleTutorial();
+	} else {
+		saveCanvas();
 	}
-	saveCanvas();
-	// if (disabledTut) {
-	// 	toggleTutorial();
-	// }
 }
 
 /* P5 FUNCTIONS START HERE */
 
 function setup() {
-	console.log("setup");
 	canvas = createCanvas(0.7*windowWidth, 0.99*windowHeight);
+	console.log("canvas is " + width + " x " + height);
 	canvas.parent('sketch');
 
 	sidebar = document.getElementById('sidebar');
 	hiddenSidebar = document.getElementById('sidebar-hidden');
+	sketchDiv = document.getElementById('sketch');
 
 	controlDiv = document.getElementById('controls-list');
 	controlDiv.innerHTML = '';
@@ -160,7 +160,7 @@ function setup() {
 	tutVisButton = document.getElementById('tut-vis-button');
 	sidebarVisButton = document.getElementById('sidebar-vis-button');
 
-	xo = dim_cell;
+	xo = 10*dim_cell;
 	yo = 14*dim_cell;
   
   	error = "";
@@ -173,40 +173,73 @@ function setup() {
 	TX = new Threading(DEFAULT_SHAFTS, DEFAULT_WARPS);
 	TL = new Treadling(DEFAULT_TREADLES, DEFAULT_PICKS);
 	drawdown = new DraftContainer(TL.picks, TX.warps);
+
+	noLoop();
+}
+
+function updateCanvasSize() {
+	// check if canvas needs to be resized
+	var currentHeight = 90*tutorialVis+dim_cell*(TL.picks + TX.shafts+10);
+	var currentWidth = dim_cell*(TL.treadles + TX.warps+10);
+	var newHeight, newWidth;
+	var ifResize = false;
+
+	if (currentHeight > height) {
+		newHeight = currentHeight + 10*dim_cell;
+		ifResize = true;
+	} else if (currentHeight < windowHeight && height > windowHeight) {
+		newHeight = windowHeight;
+		ifResize = true;
+	} else {newHeight = currentHeight;}
+
+	if (currentWidth > width) {
+		newWidth = currentWidth + 10*dim_cell;
+		ifResize = true;
+	} else if (currentWidth < sketchDiv.offsetWidth && width > sketchDiv.offsetWidth) {
+		newWidth = sketchDiv.offsetWidth;
+		ifResize = true;
+	} else {newWidth = currentWidth;}
+
+	if (ifResize) {
+		resizeCanvas(newWidth, newHeight, true);
+		console.log("canvas is now " + width + " x " + height);
+	}
 }
 
 function draw() {
+	updateCanvasSize();
 	background(255);
 	// display input mode, instruction text, error messages
 	fill(0);
 	noStroke();
 	textSize(12);
+
 	// instruction text
 	if (tutorialVis) {
 		if (inputOnThreading) {
-			text("Press '1', '3', or '5' to add a threading block of that width. Press 'r' to reverse pattern direction.", DIMCELL_DEFAULT, yo/4);
+			text("Press '1', '3', or '5' to add a threading block of that width. Press 'r' to reverse pattern direction.", xo, yo/4);
 		} else { 
-			text("Press '1', '3', or '5' to add a threading block of that width.", DIMCELL_DEFAULT, yo/4); 
+			text("Press '1', '3', or '5' to add a threading block of that width.", xo, yo/4); 
 		}
 		if (switchedDirection) {	
-			text("Press 't' to switch to editing treadles (or to switch back to threading).", DIMCELL_DEFAULT, yo/4+15);
+			text("Press 't' to switch to editing treadles (or to switch back to threading).", xo, yo/4+15);
 		}
 		if (switchedToTreadling) {
-			text("    Press a key '1' to '6' to add a treadling block.", DIMCELL_DEFAULT, yo/4+30);
-			text("    Blocks 1-4 are woven as overshot, so tabby rows are automatically inserted before each pattern pick.", DIMCELL_DEFAULT, yo/4+45);
+			text("    Press a key '1' to '6' to add a treadling block.", xo, yo/4+30);
+			text("    Blocks 1-4 are woven as overshot, so tabby rows are automatically inserted before each pattern pick.", xo, yo/4+45);
 		}
 		if (inputOnTreadling) {
-			text("Press backspace to delete the most recent treadling or threading block.", DIMCELL_DEFAULT, yo/4+60);
+			text("Press backspace to delete the most recent treadling or threading block.", xo, yo/4+60);
 		}
 	}
 
 	// status text
-	text("threading: "+TX.threadingCount+" / "+ TX.warps+ " ends", DIMCELL_DEFAULT, yo-4);
+	text("threading: "+TX.threadingCount+" / "+ TX.warps+ " ends", xo, yo-4);
 	var dir = new String();
 	if (TX.direction) {
 		dir = "1-2-3-4";
 	} else { dir = "4-3-2-1"; }
-	text("direction: "+dir, DIMCELL_DEFAULT+200, yo-4);
+	text("direction: "+dir, xo+200, yo-4);
 
 	// console.log(code+" "+pw);
 	fill(255, 0, 0);
@@ -356,10 +389,25 @@ function updateDrawdown() {
     }
   }
   //console.log(drawdown.printData());
+  redraw();
 }
 
 // handles single press (down and release) event
 function keyPressed() {
+	function addCol(n=1) {
+		for (var i=0; i<n; i++) {
+			TX.addWarp();
+  			drawdown.addCol();
+		}
+	}
+
+	function addRow(n=1) {
+		for (var i=0; i<n; i++) {
+			TL.addPick();
+      		drawdown.addRow();
+		}
+	}
+
   	// use numeric commands for editing tie-up and treadling
   	if (key >= '0' && key <= '9') {
     	var numKey = parseInt(key);
@@ -444,11 +492,9 @@ function keyPressed() {
   	// resizing
   	if (keyCode === 187 && !keyIsDown(16)) { // '=' key
     	if (editThreading) {
-      		TX.addWarp();
-      		drawdown.addCol();
+      		(keyIsDown(17) ? addCol(5) : addCol());
     	} else {
-      		TL.addPick();
-      		drawdown.addRow();
+    		(keyIsDown(17) ? addRow(5) : addRow());
     	}
   	} else if (keyCode === 187) { // zoom in with '+' or SHIFT, =
     	//console.log("zooming in");
